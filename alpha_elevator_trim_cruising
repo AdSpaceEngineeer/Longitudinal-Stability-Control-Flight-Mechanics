@@ -1,0 +1,69 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# cruise configuration
+# compute alpha_trip and elevator_deflection_trim
+
+W = 8000            # lb, Weight
+St = 40             # ft2, tail area
+CL_alpha_t = 4.5    # rad-1, CL_alpha_tail
+S = 200             # ft2, wing area
+lt_bar = 6          # ft, distance tail to wing ACs
+CL_alpha_e = 2      # rad-1, CL_alpha_elevator
+c_bar = 6           # ft, mean aero chord length
+h_n_wb = 0.25       # neutra point of wing-body
+i_t = 0.047         # rad, tail incidence angle
+zp = -2              # ft, vertical distance of thrust vector from CG, below CG
+
+CL0_wb = 0
+CL_alpha_wb = 5
+CM_ac_wb = -0.1
+CD0 = 0.03
+k = 0.1
+eps0 = 0.01
+deps_dalph = 0.3
+V = 421.952         #ft/s, airspeed
+rho = 1.756e-3      #slug.ft-3, density
+gamma = 0
+h_cg = 0.46
+
+# compute CL_trim, Thrust for cruise configuration
+q = 0.5*rho*V**2
+print("dynamic pressure = q = 1/2 x rho x V^2 = ", q)
+CL_trim = W/(q*S)
+print("assume L = W at cruise config, CL_trim = W / q x S = ", CL_trim)
+CD = CD0 + k*CL_trim**2
+print("drag coefficient CD = CD0 + k x CL^2 = ", CD)
+T = CD * q * S
+print("assume Thrust = Drag = CD x q x S = ", T)
+
+print("solve for equations in alpha_trim and delta_e_trim")
+print("1: CL_trim = CL_alpha x alpha_trim + CL_elevator x delta_e_trim")
+print("2: - Moment Coeff Thrust - CM0 = CM_alpha x alpha_trim + CM_elevator x delta_e_trim")
+
+CL_elev = CL_alpha_e * St/S
+print("CL_elevator = ", CL_elev)
+CM_elev = -1* CL_alpha_e * (St/S) * (lt_bar/c_bar) + CL_elev * (h_cg - h_n_wb)
+print("CM_elevator = ", CM_elev)
+CL_alpha = CL_alpha_wb + CL_alpha_t * (St/S) * (1 - deps_dalph)
+print("CL_alpha = ", CL_alpha)
+CM_alpha = CL_alpha * (h_cg - h_n_wb) - (St/S) * (lt_bar/c_bar) * CL_alpha_t * (1 - deps_dalph)
+print("CM_alpha = ", CM_alpha)
+TMF = T * zp / (q*c_bar*S)
+print("Moment Coeff due to Thrust = T x zp / q x c_bar x S = ", TMF)
+CM0 = CM_ac_wb + (St/S) * (lt_bar/c_bar) * CL_alpha_t * (eps0 + i_t) * ( 1 + (1 - deps_dalph)*(CL_alpha_t/CL_alpha)*(St/S) ) + TMF
+#CM0 = CM_ac_wb + (St/S) * (lt_bar/c_bar) * CL_alpha_t * (eps0 + i_t) * ( 1 + (1 - deps_dalph)*(CL_alpha_t/CL_alpha)*(St/S) )
+print("CM0 = ", CM0)
+#TMF = T * zp / (q*c_bar*S)
+#print("Moment Coeff due to Thrust = T x zp / q x c_bar x S = ", TMF)
+
+Mat1 = np.array([[CL_alpha, CL_elev],[CM_alpha, CM_elev]])
+#Mat2 = np.array([CL_trim, - TMF - CM0])
+Mat2 = np.array([CL_trim, - CM0])
+
+Mat3 = np.matmul( np.linalg.inv(Mat1) , Mat2 )
+#print(Mat3)
+print("alpha_trim_landing / deg = ", Mat3[0]*180/m.pi)
+print("elevator_trim_landing / deg = ", Mat3[1]*180/m.pi)
