@@ -1,0 +1,42 @@
+import math as m
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Minimum Tail Area given wing geometry, MAC and CG
+
+b = 150             #ft, wing span
+cr = 25             #ft, root chord
+ct = 12             #ft, tip chord
+Sw = 0.454          #radians, leading edge sweep angle
+lt_bar = 55         #ft, distance between wing and tail MACs
+SM_max = 0.05       #maximum static margin
+deps_dalph = 0.25   # rate of change of downwash angle over angle of attack
+x_cg = 25           # CG position from wing apex, aft-most position
+
+#assume delta wings and total wing area = total wing-body area
+S = 0.5*(cr + ct)*b
+print("Assuming wing body area = wing area = S / ft2 = 1/2 x (cr + ct) x b = ", S)
+# get mean aero chord length = c_bar
+lamb = ct / cr
+print("Taper Ratio = lambda = ", lamb)
+c_bar = (2/3)*cr*(lamb**2 + lamb + 1)/ (lamb + 1)
+print("Mean Aerodynamic Chord = c_bar/ ft = ", c_bar)
+AR = b**2/S
+print("Aspect Ratio = AR = b^2/S = ", AR)
+h_np_wb = 0.25 + (1/8)*(1+lamb)*(1+2*lamb)*AR*m.tan(Sw)/(1+lamb+lamb**2)
+print("wing-body neutral point chord fraction = h_np_wb = ", h_np_wb )
+#y_bar = (b/3)*(0.5 + lamb)/(1+lamb)
+#print("y_bar = ", y_bar)
+
+h_cg = x_cg/c_bar
+print("Normalized length of CG = x_cg/c_bar = ", h_cg)
+
+D1 = 1 - deps_dalph; #print(D1)
+D2 = h_cg - h_np_wb; #print(D2)
+D3 = D1/S; #print(D3)
+D4 = lt_bar*D1/(S*c_bar); #print(D4)
+
+St = (0.05 + D2)/(D4 - D2*D3 - 0.05*D3)
+print("since SM = -CM_alpha/CL_alpha >= 0.05, and assuming CL_alpha_wb = CL_alpha_t, solve for St:")
+print("Minimum tail area = St = ", St)
